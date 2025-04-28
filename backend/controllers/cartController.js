@@ -4,52 +4,55 @@ import userModel from "../models/userModel.js";
 
 const removeCart = async (req, res) => {
   try {
-    const { cartId } = req.params; // Lấy cartId từ params, hoặc userId
+    const { cartId } = req.params;
 
-    // Kiểm tra nếu không có cartId hoặc userId
     if (!cartId) {
-      return res.status(400).json({ message: "cartId is required" });
+      return res.status(400).json({ message: "Cần cung cấp cartId" });
     }
 
     let cart;
-    // Xóa giỏ hàng theo cartId nếu có
     if (cartId) {
       cart = await cartModel.findByIdAndDelete(cartId);
     }
     return res.json({ message: "Giỏ hàng đã được xóa thành công", cart });
   } catch (error) {
     console.error("Lỗi khi xóa giỏ hàng:", error);
-    return res.status(500).json({ message: "Lỗi server" });
+    return res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
+
 const getCarts = async (req, res) => {
   try {
     const carts = await cartModel.find({});
 
-    // Kiểm tra nếu không có giỏ hàng
     if (carts.length === 0) {
-      return res.status(204).json({ success: true, message: "No carts found" });
+      return res
+        .status(204)
+        .json({ success: true, message: "Không tìm thấy giỏ hàng nào" });
     }
     return res.status(200).json({ success: true, carts });
   } catch (error) {
-    console.error("Cannot get carts", error);
-    return res.status(500).json({ message: "Server Error" });
+    console.error("Không thể lấy danh sách giỏ hàng", error);
+    return res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
+
 const changeStatus = async (req, res) => {
   try {
     const { cartId, status } = req.body;
     if (!status)
       return res
         .status(404)
-        .json({ success: false, message: "Cannot get status" });
+        .json({ success: false, message: "Không thể lấy trạng thái" });
+
     await cartModel.findByIdAndUpdate(cartId, { status }, { new: true });
+
     return res.status(200).json({
       success: true,
-      message: `Change status to ${status} successfully`,
+      message: `Thay đổi trạng thái thành công sang ${status}`,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Server Error" });
+    return res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
 
@@ -68,16 +71,16 @@ const cancelOrder = async (req, res) => {
     const { orderId } = req.body;
     const order = await cartModel.findById(orderId);
     if (!order) {
-      return res.status(404).json({ message: "Order not found" });
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
     }
     if (["shipped", "cancelled"].includes(order.status)) {
       return res.status(400).json({
-        message: "Cannot cancel an order that is already shipped or cancelled",
+        message: "Không thể hủy đơn hàng đã được giao hoặc đã bị hủy",
       });
     }
     const product = await productModel.findById(order.itemId);
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
     }
     await Promise.all([
       cartModel.findByIdAndUpdate(
@@ -89,31 +92,37 @@ const cancelOrder = async (req, res) => {
         $inc: { stock_quantity: order.totalItems },
       }),
     ]);
-    return res.status(200).json({ message: "Order cancelled successfully" });
+    return res.status(200).json({ message: "Đã hủy đơn hàng thành công" });
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal server error", error: error.message });
+      .json({ message: "Lỗi máy chủ nội bộ", error: error.message });
   }
 };
 
 const createCart = async (req, res) => {
   try {
-    const { userId, itemId, totalItems, paymentMethod, shippingAddress } = req.body;
-    console.log("Creating cart with:", req.body);
+    const { userId, itemId, totalItems, paymentMethod, shippingAddress } =
+      req.body;
+    console.log("Tạo giỏ hàng với dữ liệu:", req.body);
 
     const itemData = await productModel.findById(itemId);
     const userData = await userModel.findById(userId).select("-password");
 
     if (!itemData || !userData) {
-      console.log("Missing item or user:", itemData, userData);
-      return res.status(404).json({ success: false, message: "Item or user not found" });
+      console.log("Thiếu sản phẩm hoặc người dùng:", itemData, userData);
+      return res
+        .status(404)
+        .json({
+          success: false,
+          message: "Không tìm thấy sản phẩm hoặc người dùng",
+        });
     }
 
     if (totalItems > itemData.stock_quantity || totalItems > 20) {
       return res.status(400).json({
         success: false,
-        message: "Max quantity is 20 products per cart or insufficient stock",
+        message: "Tối đa 20 sản phẩm cho mỗi giỏ hoặc không đủ hàng tồn",
       });
     }
 
@@ -139,8 +148,10 @@ const createCart = async (req, res) => {
     try {
       cart = await newCart.save();
     } catch (saveErr) {
-      console.error("Error saving cart:", saveErr);
-      return res.status(500).json({ success: false, message: "Database error" });
+      console.error("Lỗi khi lưu giỏ hàng:", saveErr);
+      return res
+        .status(500)
+        .json({ success: false, message: "Lỗi cơ sở dữ liệu" });
     }
 
     await productModel.findByIdAndUpdate(
@@ -151,12 +162,12 @@ const createCart = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Cart created successfully",
+      message: "Tạo giỏ hàng thành công",
       cartData: cart,
     });
   } catch (error) {
-    console.error("Unexpected error:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("Lỗi không xác định:", error);
+    res.status(500).json({ success: false, message: "Lỗi máy chủ nội bộ" });
   }
 };
 

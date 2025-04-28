@@ -10,15 +10,16 @@ const detailProduct = async (req, res) => {
     if (!product) {
       return res
         .status(404)
-        .json({ success: false, message: "Product not found" });
+        .json({ success: false, message: "Không tìm thấy sản phẩm" });
     }
 
     res.json({ success: true, data: product });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Cannot find product" });
+    res.status(500).json({ success: false, message: "Không thể tìm sản phẩm" });
   }
 };
+
 const cancelOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -26,21 +27,18 @@ const cancelOrder = async (req, res) => {
     // Lấy thông tin đơn hàng
     const order = await cartModel.findById(orderId);
     if (!order) {
-      return res.status(404).json({ message: "Order not found" });
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
     }
 
     if (["shipped", "cancelled"].includes(order.status)) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Cannot cancel an order that is already shipped or cancelled",
-        });
+      return res.status(400).json({
+        message: "Không thể hủy đơn hàng đã được giao hoặc đã hủy",
+      });
     }
 
     const product = await productModel.findById(order.itemId);
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
     }
 
     const [updatedOrder, _] = await Promise.all([
@@ -56,42 +54,47 @@ const cancelOrder = async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: "Order cancelled successfully", updatedOrder });
+      .json({ message: "Hủy đơn hàng thành công", updatedOrder });
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal server error", error: error.message });
+      .json({ message: "Lỗi hệ thống", error: error.message });
   }
 };
+
 const changeBestsellerStatus = async (req, res) => {
   try {
     const { productId } = req.body;
     if (!productId)
       return res
         .status(400)
-        .json({ success: false, message: "Fail to find product" });
+        .json({ success: false, message: "Không tìm thấy sản phẩm" });
 
     // Tìm sản phẩm trước để lấy giá trị bestseller hiện tại
     const product = await productModel.findById(productId);
     if (!product)
       return res
         .status(404)
-        .json({ success: false, message: "Product not found" });
+        .json({ success: false, message: "Không tìm thấy sản phẩm" });
 
     // Đảo ngược trạng thái bestseller
     const updatedProduct = await productModel.findByIdAndUpdate(
       productId,
       { bestseller: !product.bestseller },
-      { new: true } // Trả về bản ghi mới sau khi cập nhật
+      { new: true }
     );
 
     return res.status(200).json({ success: true, product: updatedProduct });
   } catch (error) {
     return res
       .status(500)
-      .json({ success: false, message: "Fail to change bestseller status" });
+      .json({
+        success: false,
+        message: "Thay đổi trạng thái bán chạy thất bại",
+      });
   }
 };
+
 const updateProduct = async (req, res) => {
   try {
     const {
@@ -133,25 +136,29 @@ const updateProduct = async (req, res) => {
     if (!product) {
       return res
         .status(404)
-        .json({ success: false, message: "Product not found" });
+        .json({ success: false, message: "Không tìm thấy sản phẩm" });
     }
 
     return res.json({ success: true, data: product });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: "Lỗi máy chủ" });
   }
 };
-const deleteProduct = async (req,res) =>{
+
+const deleteProduct = async (req, res) => {
   try {
-    const prid=req.body.prid
+    const prid = req.body.prid;
     await productModel.findByIdAndDelete(prid);
-    return res.status(204).json({success:true,message:"Delete product successfully !"});
+    return res
+      .status(204)
+      .json({ success: true, message: "Xóa sản phẩm thành công!" });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({success:false,message:"Server Error !"})
+    return res.status(500).json({ success: false, message: "Lỗi máy chủ!" });
   }
-}
+};
+
 const getProducts = async (req, res) => {
   try {
     const { query, category, brand, minPrice, maxPrice } = req.query;
@@ -190,11 +197,12 @@ const getProducts = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 export {
   detailProduct,
   cancelOrder,
   changeBestsellerStatus,
   updateProduct,
   getProducts,
-  deleteProduct
+  deleteProduct,
 };
