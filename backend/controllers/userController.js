@@ -21,25 +21,22 @@ const registerUser = async (req, res) => {
     if (data)
       return res.json({
         success: false,
-        message: "Tài khoản email đã tồn tại !",
+        message: "Tài khoản email đã tồn tại!",
       });
     if (!username || !email || !password) {
-      return res.json({ success: false, message: "Missing Details" }); // missing sth
+      return res.json({ success: false, message: "Thiếu thông tin" });
     }
     if (!validator.isEmail(email)) {
-      // invalid email
-      return res.json({ success: false, message: "Invalid email" });
+      return res.json({ success: false, message: "Email không hợp lệ" });
     }
     if (password.length < 8) {
-      //weak password
       return res.json({
         success: false,
-        message: "Please enter strong password",
+        message: "Vui lòng nhập mật khẩu mạnh hơn",
       });
     }
     console.log({ username, email });
 
-    // HAShing USER PASSWORD
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const userData = {
@@ -47,11 +44,9 @@ const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
     };
-    // Lưu tạm user
     const tokenGmail = jwt.sign({ email, userData }, process.env.JWT_SECRET);
     addPendingUser(email, { hashedPassword, tokenGmail });
 
-    // Gửi email
     const verifyLink = `${process.env.FE_URL}/verify?tokenGmail=${tokenGmail}`;
     await sendEmail(
       email,
@@ -75,8 +70,8 @@ const verify = async (req, res) => {
     if (!tokenGmail)
       return res
         .status(400)
-        .json({ success: false, message: "Không thấy gmail!" });
-    const decoded = jwt.verify(tokenGmail, process.env.JWT_SECRET); // kiểm tra hạn 15 phút
+        .json({ success: false, message: "Không tìm thấy gmail!" });
+    const decoded = jwt.verify(tokenGmail, process.env.JWT_SECRET);
 
     const email = decoded.email;
     const userData = decoded.userData;
@@ -90,13 +85,12 @@ const verify = async (req, res) => {
     console.log(pending.tokenGmail);
 
     if (pending.tokenGmail !== tokenGmail)
-      return res.status(400).send("Token không có");
+      return res.status(400).send("Token không hợp lệ");
     const newUser = new userModel(userData);
 
     const user = await newUser.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-    // Xóa khỏi pending
     removePendingUser(email);
     return res.json({ success: true, token });
   } catch (error) {
@@ -104,7 +98,7 @@ const verify = async (req, res) => {
     return res.json({ success: false, message: "Lỗi xác thực" });
   }
 };
-//api for forgot password
+
 const forgotPassword = async (req, res) => {
   try {
     const email = req.body.email;
@@ -115,7 +109,7 @@ const forgotPassword = async (req, res) => {
     if (!userData)
       return res.json({
         success: false,
-        message: "Không tồn tại email người dùng",
+        message: "Email người dùng không tồn tại",
       });
     const user_encode = jwt.sign(
       { userId: userData._id },
@@ -124,36 +118,38 @@ const forgotPassword = async (req, res) => {
     const verifyLink = `${process.env.FE_URL}/changePassword?user=${user_encode}&email=${email}`;
     await sendEmail(
       email,
-      "Bạn đã thao tác đổi mật khẩu của tài khoản sử dụng email này trên website MinhGadget",
-      `Nhấn vào đây để thao tác đổi mật khẩu: ${verifyLink}`
+      "Bạn đã yêu cầu đổi mật khẩu trên website HNshop",
+      `Nhấn vào đây để đổi mật khẩu: ${verifyLink}`
     );
     addPendingForgot(email);
     return res.json({
-      succcess: true,
-      message: "Check email để xác thực thay đổi mật khẩu",
+      success: true,
+      message: "Vui lòng kiểm tra email để xác thực thay đổi mật khẩu",
     });
   } catch (error) {
     console.log(error);
-    return res.json({ success: false, message: "Lỗi server!" });
+    return res.json({ success: false, message: "Lỗi máy chủ!" });
   }
 };
+
 const deleteUser = async (req, res) => {
   try {
     const { userId } = req.body;
     if (!userId)
-      return res.json({ success: false, message: "user id not found !" });
+      return res.json({ success: false, message: "Không tìm thấy user id!" });
     await userModel.findByIdAndDelete(userId);
-    return res.json({ success: true, message: "Delete user successfully !" });
+    return res.json({ success: true, message: "Xóa người dùng thành công!" });
   } catch (error) {
     console.log(error);
-    return res.json({ success: false, message: "Server error!" });
+    return res.json({ success: false, message: "Lỗi máy chủ!" });
   }
 };
+
 const verifyChangePassword = async (req, res) => {
   try {
     const { userId, password } = req.body;
     if (!userId || !password) {
-      return res.json({ success: false, message: "Không hợp lệ" });
+      return res.json({ success: false, message: "Dữ liệu không hợp lệ" });
     }
 
     let decoded;
@@ -170,16 +166,16 @@ const verifyChangePassword = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    //console.log(decoded);
-
-    //console.log(realUserId);
 
     const user = await userModel.findByIdAndUpdate(realUserId, {
       password: hashedPassword,
     });
 
     if (!user) {
-      return res.json({ success: false, message: "Không có user thỏa mãn!" });
+      return res.json({
+        success: false,
+        message: "Không tìm thấy người dùng!",
+      });
     }
 
     removePendingForgot(user.email);
@@ -187,7 +183,7 @@ const verifyChangePassword = async (req, res) => {
     return res.json({ success: true, message: "Đổi mật khẩu thành công!" });
   } catch (error) {
     console.error(error);
-    return res.json({ success: false, message: "Lỗi server!" });
+    return res.json({ success: false, message: "Lỗi máy chủ!" });
   }
 };
 
@@ -196,14 +192,17 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
     const user = await userModel.findOne({ email });
     if (!user) {
-      return res.json({ success: false, message: "User does not exist" });
+      return res.json({ success: false, message: "Người dùng không tồn tại" });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       return res.json({ success: true, token });
     } else {
-      return res.json({ success: false, message: "Invalid credentials" });
+      return res.json({
+        success: false,
+        message: "Thông tin đăng nhập không đúng",
+      });
     }
   } catch (error) {
     return res.json({ success: false, message: error.message });
@@ -225,7 +224,7 @@ const updateProfile = async (req, res) => {
     const { userId, name, phone, address, dob, gender } = req.body;
     const imageFile = req.file;
     if (!name || !phone || !dob || !gender || !address) {
-      return res.json({ success: false, message: "Missing data" });
+      return res.json({ success: false, message: "Thiếu dữ liệu" });
     }
     await userModel.findByIdAndUpdate(userId, {
       name,
@@ -241,7 +240,7 @@ const updateProfile = async (req, res) => {
       const imageUrl = imageUpload.secure_url;
       await userModel.findByIdAndUpdate(userId, { image: imageUrl });
     }
-    res.json({ success: true, message: "Profile updated" });
+    res.json({ success: true, message: "Cập nhật hồ sơ thành công" });
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
