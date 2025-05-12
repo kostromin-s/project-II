@@ -111,12 +111,10 @@ const createCart = async (req, res) => {
 
     if (!itemData || !userData) {
       console.log("Thiếu sản phẩm hoặc người dùng:", itemData, userData);
-      return res
-        .status(404)
-        .json({
-          success: false,
-          message: "Không tìm thấy sản phẩm hoặc người dùng",
-        });
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy sản phẩm hoặc người dùng",
+      });
     }
 
     if (totalItems > itemData.stock_quantity || totalItems > 20) {
