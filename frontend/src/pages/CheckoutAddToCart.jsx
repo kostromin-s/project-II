@@ -11,7 +11,7 @@ const CheckoutAddToCart = () => {
   const cartData =
     location.state || JSON.parse(localStorage.getItem("cartData"));
   const [address, setAddress] = useState(userData.address);
-  const [payment, setPayment] = useState("Tiền mặt");
+  const [payment, setPayment] = useState("Cash");
   const product = products.find((p) => p._id === cartData.prID);
   const [openChoosingMethod, setOpenChoosingMethod] = useState(false);
   const totalPrice = product ? product.price * cartData.quantity : 0;
