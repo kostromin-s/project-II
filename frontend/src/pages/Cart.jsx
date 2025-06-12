@@ -3,14 +3,13 @@ import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { FaCheckCircle, FaTimesCircle, FaTruck } from "react-icons/fa";
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 const Cart = () => {
   const { backendurl, token } = useContext(AppContext);
   const [cart, setCart] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
-  const [hiddenIds, setHiddenIds] = useState([]);
 
   const navigate = useNavigate();
 
@@ -27,6 +26,7 @@ const Cart = () => {
       toast.error(error.message);
     }
   };
+
   const handleRemovePermanently = async (id) => {
     try {
       await axios.post(
@@ -91,6 +91,16 @@ const Cart = () => {
     };
     fetchCart();
   }, [token]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get("payment");
+
+    if (paymentSuccess === "success") {
+      getMyCart();
+      toast.success("Thanh toán thành công!");
+    }
+  }, []);
 
   return (
     token && (
