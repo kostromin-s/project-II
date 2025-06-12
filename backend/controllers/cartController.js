@@ -100,17 +100,100 @@ const cancelOrder = async (req, res) => {
   }
 };
 
+// const createCart = async (req, res) => {
+//   try {
+//     const { userId, itemId, totalItems, paymentMethod, shippingAddress } =
+//       req.body;
+//     console.log("Tạo giỏ hàng với dữ liệu:", req.body);
+
+//     const itemData = await productModel.findById(itemId);
+//     const userData = await userModel.findById(userId).select("-password");
+
+//     if (!itemData || !userData) {
+//       console.log("Thiếu sản phẩm hoặc người dùng:", itemData, userData);
+//       return res.status(404).json({
+//         success: false,
+//         message: "Không tìm thấy sản phẩm hoặc người dùng",
+//       });
+//     }
+
+//     if (totalItems > itemData.stock_quantity || totalItems > 20) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Tối đa 20 sản phẩm cho mỗi giỏ hoặc không đủ hàng tồn",
+//       });
+//     }
+
+//     const deliveryDate = new Date();
+//     deliveryDate.setDate(deliveryDate.getDate() + 5);
+
+//     const data = {
+//       userId,
+//       itemId,
+//       totalItems,
+//       paymentMethod,
+//       shippingAddress,
+//       status: "processing",
+//       itemData,
+//       userData,
+//       totalPrice: itemData.price * totalItems,
+//       paymentStatus: false,
+//       deliveryDate,
+//     };
+
+//     const newCart = new cartModel(data);
+//     let cart;
+//     try {
+//       cart = await newCart.save();
+//     } catch (saveErr) {
+//       console.error("Lỗi khi lưu giỏ hàng:", saveErr);
+//       return res
+//         .status(500)
+//         .json({ success: false, message: "Lỗi cơ sở dữ liệu" });
+//     }
+
+//     await productModel.findByIdAndUpdate(
+//       itemId,
+//       { stock_quantity: itemData.stock_quantity - totalItems },
+//       { new: true }
+//     );
+
+//     res.json({
+//       success: true,
+//       message: "Tạo giỏ hàng thành công",
+//       cartData: cart,
+//     });
+//   } catch (error) {
+//     console.error("Lỗi không xác định:", error);
+//     res.status(500).json({ success: false, message: "Lỗi máy chủ nội bộ" });
+//   }
+// };
+
 const createCart = async (req, res) => {
   try {
     const { userId, itemId, totalItems, paymentMethod, shippingAddress } =
       req.body;
-    console.log("Tạo giỏ hàng với dữ liệu:", req.body);
+    console.log("🎯 Dữ liệu req.body:", req.body);
+
+    // Kiểm tra ID có hợp lệ không
+    if (!userId || !itemId) {
+      console.log("❌ Thiếu userId hoặc itemId");
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Thiếu thông tin sản phẩm hoặc người dùng",
+        });
+    }
 
     const itemData = await productModel.findById(itemId);
+    console.log("📦 itemData:", itemData);
+
     const userData = await userModel.findById(userId).select("-password");
+    console.log("👤 userData:", userData);
 
     if (!itemData || !userData) {
-      console.log("Thiếu sản phẩm hoặc người dùng:", itemData, userData);
+      console.log("❌ Không tìm thấy item hoặc user");
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy sản phẩm hoặc người dùng",
@@ -118,6 +201,7 @@ const createCart = async (req, res) => {
     }
 
     if (totalItems > itemData.stock_quantity || totalItems > 20) {
+      console.log("⚠️ Số lượng không hợp lệ:", totalItems);
       return res.status(400).json({
         success: false,
         message: "Tối đa 20 sản phẩm cho mỗi giỏ hoặc không đủ hàng tồn",
@@ -144,9 +228,11 @@ const createCart = async (req, res) => {
     const newCart = new cartModel(data);
     let cart;
     try {
+      console.log("💾 Đang lưu giỏ hàng...");
       cart = await newCart.save();
+      console.log("✅ Lưu giỏ hàng thành công:", cart._id);
     } catch (saveErr) {
-      console.error("Lỗi khi lưu giỏ hàng:", saveErr);
+      console.error("❌ Lỗi khi lưu giỏ hàng:", saveErr.message);
       return res
         .status(500)
         .json({ success: false, message: "Lỗi cơ sở dữ liệu" });
@@ -164,7 +250,7 @@ const createCart = async (req, res) => {
       cartData: cart,
     });
   } catch (error) {
-    console.error("Lỗi không xác định:", error);
+    console.error("🔥 Lỗi không xác định:", error.message);
     res.status(500).json({ success: false, message: "Lỗi máy chủ nội bộ" });
   }
 };
