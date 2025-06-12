@@ -61,8 +61,11 @@ const payCart = async (req, res) => {
       bank_code: "",
       callback_url: `${process.env.BE_URL}/api/user/callback`,
     };
-
-    console.log(order.callback_url);
+    //theo dõi order
+    console.log(
+      "Dữ liệu order trước khi mã hóa MAC:\n",
+      JSON.stringify(order, null, 2)
+    );
 
     const data = [
       order.app_id,
@@ -143,8 +146,10 @@ const callback = async (req, res) => {
     if (billStatus.data.return_code === 1) {
       // Thành công
       try {
-        await cartModel.findByIdAndUpdate(itemId, { paymentStatus: true });
-        console.log("Cập nhật giỏ hàng thành công.");
+        if (billStatus.data.return_code === 1) {
+          await cartModel.findByIdAndUpdate(itemId, { paymentStatus: true });
+          console.log("Cập nhật giỏ hàng thành công.");
+        }
       } catch (err) {
         console.error("Lỗi khi cập nhật giỏ hàng:", err);
       }
