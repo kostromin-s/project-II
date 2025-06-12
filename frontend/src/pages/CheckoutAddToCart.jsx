@@ -89,16 +89,19 @@ const CheckoutAddToCart = () => {
 
             {openChoosingMethod && (
               <div className="absolute left-0 mt-2 w-full bg-white border shadow-lg rounded-md z-10">
-                {["Tiền mặt", "Thanh toán online"].map((mt) => (
+                {[
+                  { label: "Tiền mặt", value: "Cash" },
+                  { label: "Thanh toán online", value: "Pay online" },
+                ].map((method) => (
                   <p
-                    key={mt}
+                    key={method.value}
                     className="px-4 py-2 cursor-pointer hover:bg-blue-500 hover:text-white transition"
                     onClick={() => {
-                      setPayment(mt);
+                      setPayment(method.value); // vẫn lưu giá trị "Cash" hoặc "Pay online"
                       setOpenChoosingMethod(false);
                     }}
                   >
-                    {mt}
+                    {method.label}
                   </p>
                 ))}
               </div>
