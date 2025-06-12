@@ -144,6 +144,7 @@ const createCart = async (req, res) => {
     const newCart = new cartModel(data);
     let cart;
     try {
+      console.log("Data sắp lưu:", data);
       cart = await newCart.save();
     } catch (saveErr) {
       console.error("Lỗi khi lưu giỏ hàng:", saveErr);
