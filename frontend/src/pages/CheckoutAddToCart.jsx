@@ -37,13 +37,17 @@ const CheckoutAddToCart = () => {
 
       if (addCart) {
         toast.success("Thêm vào giỏ hàng thành công");
+        navigate("/mycart", { replace: true }); // <-- chỉ chuyển trang nếu thành công
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error.message);
-    }
+      console.error("❌ Lỗi gửi request:", error);
 
-    navigate("/mycart", { replace: true });
+      // Ưu tiên lấy lỗi từ backend gửi về (nếu có)
+      const errorMessage =
+        error.response?.data?.message || "Đã xảy ra lỗi không xác định";
+
+      toast.error(errorMessage);
+    }
   };
 
   return (
