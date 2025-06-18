@@ -38,7 +38,7 @@ const AllCarts = () => {
         await removeCart(selectedCart._id);
         await notifyChangeStatusCart({
           userId: selectedCart.userId,
-          text: `The cart (id: #${selectedCart._id}) that has ${selectedCart.totalItems} item(s) of ${selectedCart.itemData.name} you ordered has been deleted by admin.`,
+          text: `Giỏ hàng (id: #${selectedCart._id}) chứa ${selectedCart.totalItems} sản phẩm ${selectedCart.itemData.name} mà bạn đặt đã bị quản trị viên xóa.`,
         });
         setChangeCart((prev) => !prev);
         setSelectedCart(null);
@@ -54,7 +54,7 @@ const AllCarts = () => {
     if (success) {
       await notifyChangeStatusCart({
         userId: cart.userId,
-        text: `The cart (id: #${cart._id}) that has ${cart.totalItems} item(s) of ${cart.itemData.name} was updated to ${newStatus} by admin.`,
+        text: `Giỏ hàng (id: #${cart._id}) chứa ${cart.totalItems} sản phẩm ${cart.itemData.name} đã được quản trị viên cập nhật trạng thái thành ${newStatus}.`,
       });
       setChangeCart((prev) => !prev);
     }
