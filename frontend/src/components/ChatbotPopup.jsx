@@ -23,7 +23,15 @@ export default function ChatbotPopup() {
 
   const handleSend = async () => {
     if (!input.trim()) return;
-    await addMessages(input.trim());
+
+    const newMessage = [
+      {
+        role: "user",
+        content: input.trim(),
+      },
+    ];
+
+    await addMessages(newMessage); // Gửi đúng dạng mảng object
     setInput("");
   };
 

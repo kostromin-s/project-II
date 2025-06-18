@@ -15,7 +15,7 @@ const About = () => {
         <div className="flex flex-col justify-center gap-6 md:w-2/4 text-sm text-black ">
           <p>
             Chào mừng bạn đến với website của chúng tôi – điểm đến đáng tin cậy
-            cho các sản phẩm và phụ kiện công nghệ chất lượng cao. Tại Group26,
+            cho các sản phẩm và phụ kiện công nghệ chất lượng cao. Tại HNshop,
             chúng tôi hiểu tầm quan trọng của việc luôn kết nối và sở hữu công
             nghệ mới nhất, cho dù là phục vụ công việc, giải trí hay nhu cầu
             hằng ngày.
