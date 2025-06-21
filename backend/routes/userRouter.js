@@ -44,7 +44,6 @@ userRouter.post("/ask-groq", askGroq);
 userRouter.post("/ask-and-save-groq", authUser, handleChat);
 userRouter.post("/delete-conversation", authUser, handleDeleteChatHistory);
 userRouter.get("/get-conversation", authUser, getConversation);
-userRouter.get("/get-all-replies", authUser, getAllReplies);
 userRouter.post("/pay-cart", authUser, payCart);
 userRouter.get("/get-my-replies", authUser, getReplyByUser);
 userRouter.get("/get-all-replies", authUser, getAllReplies);

@@ -28,4 +28,11 @@ app.get("/", (req, res) => {
   res.send("API Working");
 });
 
+setInterval(() => {
+  axios
+    .get(BE_URL)
+    .then(() => console.log("✅ Self-ping successful"))
+    .catch((err) => console.log("❌ Self-ping failed:", err.message));
+}, 5 * 60 * 1000);
+
 app.listen(port, () => console.log("Server started on PORT: " + port));

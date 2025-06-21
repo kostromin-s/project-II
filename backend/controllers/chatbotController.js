@@ -56,8 +56,10 @@ const handleChat = async (req, res) => {
   try {
     const { userId, message } = req.body;
 
-    if (!userId || !message) {
-      return res.status(400).json({ success: false, message: 'Missing userId or message' });
+    if (!userId || !Array.isArray(message)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing userId or message" });
     }
 
     const SYSTEM_PROMPT = `You are an AI assistant for "Group26" – a tech gadget e-commerce website founded by us.
@@ -106,14 +108,14 @@ Important:
 
     const groq1 = new Groq({ apiKey: groq.apiKey });
     const tempMessages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...history.conversation.map(({ role, text }) => ({ role, content: text })),
-      { role: 'user', content: message }
+      { role: "system", content: SYSTEM_PROMPT },
+      ...history.conversation,
+      ...message,
     ];
 
     const completion = await groq1.chat.completions.create({
       model: groq.model,
-      messages: tempMessages
+      messages: tempMessages,
     });
 
     let assistantReply = completion.choices[0].message.content;
@@ -129,9 +131,20 @@ Important:
       try {
         const [, findStr, selectStr, sortStr, limitStr] = match;
 
-        const query = findStr ? Function('"use strict";return (' + findStr + ')')() : {};
-        const select = selectStr ? selectStr.trim().replace(/^["']|["']$/g, '') : null;
-        const sort = sortStr ? Function('"use strict";return (' + sortStr + ')')() : null;
+        console.log("Matched values:", {
+          findStr,
+          selectStr,
+          sortStr,
+          limitStr,
+        });
+
+        const query = findStr
+          ? JSON.parse(JSON.stringify(eval("(" + findStr + ")")))
+          : {};
+        const select = selectStr?.trim().replace(/^["']|["']$/g, "");
+        const sort = sortStr
+          ? JSON.parse(JSON.stringify(eval("(" + sortStr + ")")))
+          : null;
         const limit = limitStr ? parseInt(limitStr) : null;
 
         let queryBuilder = productModel.find(query);
@@ -141,41 +154,59 @@ Important:
 
         products = await queryBuilder.lean();
 
-        const productList = products.length > 0
-  ? products.map(p => {
-      const parts = [`- ${p.name} – ${p.price?.toLocaleString('vi-VN')}đ`];
+        const productList =
+          products.length > 0
+            ? products
+                .map((p) => {
+                  const parts = [
+                    `- ${p.name} – ${p.price?.toLocaleString("vi-VN")}đ`,
+                  ];
 
-      if (p.brand) parts.push(`  - Brand: ${p.brand}`);
-      if (p.category) parts.push(`  - Category: ${p.category}`);
-      if (p.description) parts.push(`  - Description: ${p.description}`);
-      if (p.specifications) parts.push(`  - Specifications: ${JSON.stringify(p.specifications)}`);
-      if (typeof p.available === 'boolean') parts.push(`  - Available: ${p.available ? '✅' : '❌'}`);
-      if (typeof p.bestseller === 'boolean') parts.push(`  - Bestseller: ${p.bestseller ? '🔥' : '—'}`);
+                  if (p.brand) parts.push(`  - Brand: ${p.brand}`);
+                  if (p.category) parts.push(`  - Category: ${p.category}`);
+                  if (p.description)
+                    parts.push(`  - Description: ${p.description}`);
+                  if (p.specifications)
+                    parts.push(
+                      `  - Specifications: ${JSON.stringify(p.specifications)}`
+                    );
+                  if (typeof p.available === "boolean")
+                    parts.push(`  - Available: ${p.available ? "✅" : "❌"}`);
+                  if (typeof p.bestseller === "boolean")
+                    parts.push(`  - Bestseller: ${p.bestseller ? "🔥" : "—"}`);
 
-      return parts.join('\n');
-    }).join('\n\n')
-  : 'Hiện tại không có sản phẩm nào phù hợp.';
+                  return parts.join("\n");
+                })
+                .join("\n\n")
+            : "Hiện tại không có sản phẩm nào phù hợp.";
 
         // Replace code block with product list
-        assistantReply = assistantReply.replace(/```(?:\s*javascript)?\s*\n([\s\S]*?)```/, productList);
-
+        assistantReply = assistantReply.replace(
+          /```(?:\s*javascript)?\s*\n([\s\S]*?)```/,
+          productList
+        );
       } catch (err) {
-        console.error('Query execution error:', err);
-        assistantReply += '\n\n⚠️ Đã xảy ra lỗi khi truy vấn dữ liệu.';
+        console.error("Error during query parsing or execution:", err);
+        assistantReply +=
+          "\n\n⚠️ Đã xảy ra lỗi khi phân tích hoặc thực thi câu truy vấn.";
       }
     }
 
     // Save history
-    history.conversation.push({ role: 'user', text: message });
-    history.conversation.push({ role: 'assistant', text: assistantReply });
+    history.conversation.push(...message); // push toàn bộ message người dùng gửi
+    history.conversation.push({ role: "assistant", content: assistantReply });
     history.updatedAt = new Date();
     await history.save();
 
     return res.status(200).json({ success: true, data: history.conversation });
-
   } catch (error) {
-    console.error('Chat error:', error);
-    return res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error("Chat error:", error);
+    console.error("Full error:", JSON.stringify(error, null, 2));
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      details: error.message,
+    });
   }
 };
 
